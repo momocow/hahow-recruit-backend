@@ -1,0 +1,19 @@
+{
+    "compilerOptions": {
+        "declaration": true,
+        "outDir": "dist",
+        "esModuleInterop": true,
+        "experimentalDecorators": true,
+        "strict": true,
+        "lib": [
+            "ES2019"
+        ],
+        "module": "commonjs",
+        "target": "ES2019"
+    },
+    "include": [
+        "lib",
+        "test",
+        "app.ts"
+    ]
+}
