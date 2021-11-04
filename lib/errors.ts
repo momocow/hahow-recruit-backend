@@ -12,7 +12,7 @@ export function isTranslatableError(err: unknown): err is TranslatableError {
     typeof err === 'object' &&
     err !== null &&
     'httpError' in err &&
-    isHttpError((err as Partial<TranslatableError>).httpError)
+    typeof (err as Partial<TranslatableError>).httpError === 'function'
   );
 }
 

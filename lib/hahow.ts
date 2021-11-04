@@ -1,4 +1,5 @@
 import { BadGateway, HttpError } from 'http-errors';
+import Joi from 'joi';
 import fetch from 'node-fetch';
 import { TranslatableError } from './errors';
 
@@ -27,16 +28,40 @@ export function getHeroesUrl(heroId?: string): string {
   );
 }
 
-export async function fetchJson<T = unknown>(url: string): Promise<T> {
+export async function fetchJson<T = unknown>(
+  url: string,
+  schema: Joi.Schema,
+): Promise<T> {
   const resp = await fetch(url, {
     method: 'GET',
     headers: { Accept: 'application/json' },
   });
-  if (resp.status !== 200)
+
+  if (resp.status !== 200) {
     throw new ApiGatewayError(
-      `${resp.url} (${resp.status} ${resp.statusText})`,
+      `Got unexpected status (${resp.status} ${resp.statusText}) while ` +
+        `requesting ${resp.url}`,
     );
-  return await resp.json();
+  }
+
+  const contentType = resp.headers.get('content-type');
+  if (!contentType?.includes('application/json')) {
+    throw new ApiGatewayError(`Expect JSON, got ${contentType}`);
+  }
+
+  let data: unknown;
+  try {
+    data = await resp.json();
+  } catch (e) {
+    throw new ApiGatewayError('Failed to decode JSON data');
+  }
+
+  const { error, value } = schema.validate(data);
+  if (error) {
+    throw new ApiGatewayError('Invalid data');
+  }
+
+  return value as T;
 }
 
 export interface HeroProfile {
@@ -53,18 +78,38 @@ export interface Hero {
   profile?: HeroProfile;
 }
 
+export const heroProfileSchema = Joi.object({
+  str: Joi.number().required(),
+  int: Joi.number().required(),
+  agi: Joi.number().required(),
+  luk: Joi.number().required(),
+});
+
+export const heroSchema = Joi.object({
+  id: Joi.string().required(),
+  name: Joi.string().required(),
+  image: Joi.string().required(),
+});
+
+export const heroesSchema = Joi.array().items(heroSchema);
+
 export async function fetchHeroes(): Promise<Hero[]> {
-  return await fetchJson('https://hahow-recruit.herokuapp.com/heroes');
+  return await fetchJson(
+    'https://hahow-recruit.herokuapp.com/heroes',
+    heroesSchema,
+  );
 }
 
 export async function fetchHero(heroId: string): Promise<Hero> {
   return await fetchJson(
     'https://hahow-recruit.herokuapp.com/heroes/' + heroId,
+    heroSchema,
   );
 }
 
 export async function fetchHeroProfile(heroId: string): Promise<HeroProfile> {
   return await fetchJson(
     'https://hahow-recruit.herokuapp.com/heroes/' + heroId + '/profile',
+    heroProfileSchema,
   );
 }
