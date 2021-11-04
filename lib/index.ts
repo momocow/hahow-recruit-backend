@@ -1,9 +1,12 @@
 import Koa from 'koa';
-import { auth } from './auth';
+import { errorLogger, errorTranslator } from './errors';
 import { negotiator } from './negotiator';
+import hero from './routes/heroes';
 
 export function createApp(app: Koa = new Koa()): Koa {
-  app.use(negotiator());
-  app.use(auth());
-  return app;
+  return app
+    .use(errorTranslator())
+    .use(errorLogger())
+    .use(negotiator())
+    .use(hero());
 }
