@@ -2,6 +2,7 @@
   "name": "hahow-recruit-backend",
   "version": "0.1.0",
   "private": true,
+  "main": "dist/lib/index.js",
   "scripts": {
     "commit": "gitmoji -c",
     "prepare": "husky install",
@@ -45,5 +46,8 @@
     "koa": "^2.13.4",
     "koa-compose": "^4.1.0",
     "node-fetch": "^2.6.6"
-  }
+  },
+  "files": [
+    "dist"
+  ]
 }
