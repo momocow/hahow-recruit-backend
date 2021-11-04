@@ -1,4 +1,4 @@
-import { HttpError, InternalServerError, isHttpError } from 'http-errors';
+import { HttpError, isHttpError } from 'http-errors';
 import Koa from 'koa';
 
 export type HttpErrorFactory = (error: Error) => HttpError;
@@ -34,7 +34,7 @@ export function errorTranslator({
       if (!(err instanceof Error) || isHttpError(err)) throw err;
 
       // translate generic error into http error
-      let httpError: HttpError;
+      let httpError: HttpError | undefined;
       if (isTranslatableError(err)) httpError = err.httpError(err);
       else {
         const errorClazz = Array.from(errorMap.keys()).find(
@@ -42,11 +42,9 @@ export function errorTranslator({
         );
         if (errorClazz) {
           httpError = errorMap.get(errorClazz)!(err);
-        } else {
-          httpError = new InternalServerError();
         }
       }
-      throw httpError;
+      throw httpError ?? err;
     }
   };
 }
