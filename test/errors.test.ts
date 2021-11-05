@@ -4,7 +4,7 @@ import {
   errorTranslator,
   isTranslatableError,
 } from '../lib/errors';
-import { mockContext } from './utils/mock';
+import { getThrownError, mockContext } from './utils';
 
 describe('isTranslatableError', () => {
   test('success', () => {
@@ -77,11 +77,10 @@ describe('errorTranslator', () => {
       // eslint-disable-next-line no-throw-literal
       throw 'hello';
     };
-    try {
-      await errorTranslator()(mockContext({}), next);
-    } catch (e) {
-      expect(e).toBe('hello');
-    }
+    const err = await getThrownError(() =>
+      errorTranslator()(mockContext({}), next),
+    );
+    expect(err).toBe('hello');
   });
 
   test('throw HttpError without translation', async () => {

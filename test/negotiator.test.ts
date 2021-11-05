@@ -1,5 +1,5 @@
 import { defaultNegotiationMap, negotiator } from '../lib/negotiator';
-import { mockContext } from './utils/mock';
+import { mockContext } from './utils';
 
 describe('defaultNegotiationMap', () => {
   test('json', () => {
