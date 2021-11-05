@@ -1,5 +1,5 @@
+import Koa from 'koa';
 import { defaultNegotiationMap, negotiator } from '../lib/negotiator';
-import { mockContext } from './utils';
 
 describe('defaultNegotiationMap', () => {
   test('json', () => {
@@ -23,7 +23,7 @@ describe('negotiator', () => {
     const next = jest.fn().mockImplementation(() => {
       ctx.body = { foo: 'bar' };
     });
-    await negotiator()(mockContext(ctx), next);
+    await negotiator()(ctx as unknown as Koa.Context, next);
     expect(ctx.body).toBe('{"foo":"bar"}');
   });
 
@@ -38,7 +38,9 @@ describe('negotiator', () => {
     const next = jest.fn().mockImplementation(() => {
       ctx.body = { foo: 'bar' };
     });
-    await expect(() => negotiator()(mockContext(ctx), next)).rejects.toThrow();
+    await expect(() =>
+      negotiator()(ctx as unknown as Koa.Context, next),
+    ).rejects.toThrow();
     expect(ctx.assert).toBeCalledWith(false, 406);
   });
 });

@@ -1,10 +1,11 @@
 import { BadRequest } from 'http-errors';
+import Koa from 'koa';
 import {
   errorLogger,
   errorTranslator,
   isTranslatableError,
 } from '../lib/errors';
-import { getThrownError, mockContext } from './utils';
+import { getThrownError } from './utils';
 
 describe('isTranslatableError', () => {
   test('success', () => {
@@ -34,7 +35,7 @@ describe('errorLogger', () => {
     };
     const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
     await expect(() =>
-      errorLogger()(mockContext({}), next),
+      errorLogger()({} as Koa.Context, next),
     ).rejects.toThrowError(error);
     expect(consoleErrorSpy).toBeCalledWith(error);
 
@@ -48,7 +49,7 @@ describe('errorLogger', () => {
     };
     const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
     await expect(() =>
-      errorLogger()(mockContext({}), next),
+      errorLogger()({} as Koa.Context, next),
     ).rejects.toThrowError(BadRequest);
     expect(consoleErrorSpy).not.toBeCalled();
 
@@ -63,7 +64,10 @@ describe('errorLogger', () => {
     const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
 
     await expect(() =>
-      errorLogger({ shouldLog: (err) => err === error })(mockContext({}), next),
+      errorLogger({ shouldLog: (err) => err === error })(
+        {} as Koa.Context,
+        next,
+      ),
     ).rejects.toThrowError(BadRequest);
     expect(consoleErrorSpy).toBeCalledWith(error);
 
@@ -78,7 +82,7 @@ describe('errorTranslator', () => {
       throw 'hello';
     };
     const err = await getThrownError(() =>
-      errorTranslator()(mockContext({}), next),
+      errorTranslator()({} as Koa.Context, next),
     );
     expect(err).toBe('hello');
   });
@@ -89,7 +93,7 @@ describe('errorTranslator', () => {
       throw error;
     };
     await expect(() =>
-      errorTranslator()(mockContext({}), next),
+      errorTranslator()({} as Koa.Context, next),
     ).rejects.toThrowError(BadRequest);
   });
 
@@ -103,7 +107,7 @@ describe('errorTranslator', () => {
       throw error1;
     };
     await expect(() =>
-      errorTranslator()(mockContext({}), next),
+      errorTranslator()({} as Koa.Context, next),
     ).rejects.toThrowError(BadRequest);
   });
 
@@ -117,7 +121,7 @@ describe('errorTranslator', () => {
     await expect(() =>
       errorTranslator({
         errorMap: new Map().set(BaseError, () => new BadRequest()),
-      })(mockContext({}), next),
+      })({} as Koa.Context, next),
     ).rejects.toThrowError(BadRequest);
   });
 
@@ -132,7 +136,7 @@ describe('errorTranslator', () => {
     await expect(() =>
       errorTranslator({
         errorMap: new Map().set(Child1Error, () => new BadRequest()),
-      })(mockContext({}), next),
+      })({} as Koa.Context, next),
     ).rejects.toThrowError(Child2Error);
   });
 });

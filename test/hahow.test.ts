@@ -1,6 +1,7 @@
 import { BadGateway } from 'http-errors';
 import fetch, { MockParams } from 'jest-fetch-mock';
 import Joi, { ValidationError } from 'joi';
+import { AbortSignal } from 'node-fetch/externals';
 import { isTranslatableError } from '../lib/errors';
 import {
   ApiGatewayError,
@@ -33,6 +34,25 @@ describe('authenticate', () => {
     fetch.mockResponseOnce('', { status: 401 });
     const result = await authenticate('foo', 'bar');
     expect(result).toBe(false);
+  });
+
+  test('can be aborted', async () => {
+    jest.useFakeTimers();
+
+    fetch.mockResponseOnce(async () => {
+      jest.advanceTimersByTime(100);
+      return { body: '', init: { status: 200 } };
+    });
+
+    const ctrl = new AbortController();
+    setTimeout(() => ctrl.abort(), 50);
+
+    const err = await getThrownError(() =>
+      authenticate('foo', 'bar', { signal: ctrl.signal as AbortSignal }),
+    );
+    expect((err as Error).name).toBe('AbortError');
+
+    jest.useRealTimers();
   });
 });
 
@@ -97,6 +117,25 @@ describe('fetchJson', () => {
     )) as ApiGatewayError;
     expect(err).toBeInstanceOf(ApiGatewayError);
     expect(err.message).toMatch(/^Invalid data/);
+  });
+
+  test('can be aborted', async () => {
+    jest.useFakeTimers();
+
+    fetch.mockResponseOnce(async () => {
+      jest.advanceTimersByTime(100);
+      return '';
+    });
+
+    const ctrl = new AbortController();
+    setTimeout(() => ctrl.abort(), 50);
+
+    const err = await getThrownError(() =>
+      fetchJson('<url>', Joi.any(), { signal: ctrl.signal as AbortSignal }),
+    );
+    expect((err as Error).name).toBe('AbortError');
+
+    jest.useRealTimers();
   });
 });
 
