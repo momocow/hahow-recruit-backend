@@ -2,6 +2,8 @@ import Router from '@koa/router';
 import { Unauthorized } from 'http-errors';
 import Koa from 'koa';
 import compose from 'koa-compose';
+import { RequestInit } from 'node-fetch';
+import { AbortSignal } from 'node-fetch/externals';
 import {
   authenticate,
   fetchHero,
@@ -23,8 +25,11 @@ export const hahowAuth: (ctx: Koa.Context) => Promise<boolean> = async (
   return false;
 };
 
-export async function loadProfile(hero: Hero): Promise<Hero> {
-  const profile = await fetchHeroProfile(hero.id);
+export async function loadProfile(
+  hero: Hero,
+  options?: RequestInit,
+): Promise<Hero> {
+  const profile = await fetchHeroProfile(hero.id, options);
   return Object.assign({}, hero, { profile });
 }
 
@@ -33,7 +38,17 @@ export const getAllHeroes: Router.Middleware = async (ctx) => {
   if (await hahowAuth(ctx)) {
     // @TODO use async.parallelLimit
     // if a limit of maximum concurrencies is required
-    heroes = await Promise.all(heroes.map((hero) => loadProfile(hero)));
+    const ctrl = new AbortController();
+    heroes = await Promise.all(
+      heroes.map((hero) =>
+        // @TODO AbortSignal in @types/node
+        //       lacks definitions to be an EventTarget
+        loadProfile(hero, { signal: ctrl.signal as AbortSignal }).catch((e) => {
+          ctrl.abort();
+          throw e;
+        }),
+      ),
+    );
   }
 
   ctx.body = { heroes };

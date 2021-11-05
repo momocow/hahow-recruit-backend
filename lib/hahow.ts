@@ -1,6 +1,6 @@
 import { BadGateway, HttpError } from 'http-errors';
 import Joi from 'joi';
-import fetch from 'node-fetch';
+import fetch, { RequestInit } from 'node-fetch';
 import { TranslatableError } from './errors';
 
 export class ApiGatewayError extends Error implements TranslatableError {
@@ -11,6 +11,7 @@ export class ApiGatewayError extends Error implements TranslatableError {
 export async function authenticate(
   name: string,
   password: string,
+  options?: RequestInit,
 ): Promise<boolean> {
   const resp = await fetch('https://hahow-recruit.herokuapp.com/auth', {
     method: 'POST',
@@ -18,23 +19,20 @@ export async function authenticate(
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ name, password }),
+    ...options,
   });
   return resp.status === 200;
-}
-
-export function getHeroesUrl(heroId?: string): string {
-  return (
-    'https://hahow-recruit.herokuapp.com/heroes' + (heroId ? '/' + heroId : '')
-  );
 }
 
 export async function fetchJson<T = unknown>(
   url: string,
   schema: Joi.Schema,
+  options?: RequestInit,
 ): Promise<T> {
   const resp = await fetch(url, {
     method: 'GET',
     headers: { Accept: 'application/json' },
+    ...options,
   });
 
   if (resp.status !== 200) {
@@ -46,7 +44,7 @@ export async function fetchJson<T = unknown>(
 
   const contentType = resp.headers.get('content-type');
   if (!contentType?.includes('application/json')) {
-    throw new ApiGatewayError(`Expect JSON, got ${contentType}`);
+    throw new ApiGatewayError(`Expect application/json, got ${contentType}`);
   }
 
   let data: unknown;
@@ -56,7 +54,7 @@ export async function fetchJson<T = unknown>(
     throw new ApiGatewayError('Failed to decode JSON data');
   }
 
-  const { error, value } = schema.validate(data);
+  const { error, value } = schema.validate(data, { convert: false });
   if (error) {
     throw new ApiGatewayError('Invalid data');
   }
@@ -93,23 +91,32 @@ export const heroSchema = Joi.object({
 
 export const heroesSchema = Joi.array().items(heroSchema);
 
-export async function fetchHeroes(): Promise<Hero[]> {
+export async function fetchHeroes(options?: RequestInit): Promise<Hero[]> {
   return await fetchJson(
     'https://hahow-recruit.herokuapp.com/heroes',
     heroesSchema,
+    options,
   );
 }
 
-export async function fetchHero(heroId: string): Promise<Hero> {
+export async function fetchHero(
+  heroId: string,
+  options?: RequestInit,
+): Promise<Hero> {
   return await fetchJson(
     'https://hahow-recruit.herokuapp.com/heroes/' + heroId,
     heroSchema,
+    options,
   );
 }
 
-export async function fetchHeroProfile(heroId: string): Promise<HeroProfile> {
+export async function fetchHeroProfile(
+  heroId: string,
+  options?: RequestInit,
+): Promise<HeroProfile> {
   return await fetchJson(
     'https://hahow-recruit.herokuapp.com/heroes/' + heroId + '/profile',
     heroProfileSchema,
+    options,
   );
 }
