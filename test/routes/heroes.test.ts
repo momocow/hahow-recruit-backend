@@ -1,9 +1,20 @@
+import Router from '@koa/router';
 import { Unauthorized } from 'http-errors';
 import Koa from 'koa';
 import fetchExt from 'node-fetch/externals';
 import { setTimeout } from 'timers/promises';
-import { authenticate, fetchHeroes, fetchHeroProfile } from '../../lib/hahow';
-import { getAllHeroes, hahowAuth, loadProfile } from '../../lib/routes/heroes';
+import {
+  authenticate,
+  fetchHero,
+  fetchHeroes,
+  fetchHeroProfile,
+} from '../../lib/hahow';
+import {
+  getAllHeroes,
+  getOneHero,
+  hahowAuth,
+  loadProfile,
+} from '../../lib/routes/heroes';
 
 jest.mock('../../lib/hahow');
 
@@ -88,7 +99,7 @@ describe('getAllHeroes', () => {
       request: { headers },
       get: (k: string) => headers[k.toLowerCase()],
       body: undefined,
-    } as Parameters<typeof getAllHeroes>[0];
+    } as Router.RouterContext;
     await getAllHeroes(ctx, next);
     expect(next).not.toBeCalled();
     expect(ctx.body).toEqual({ heroes });
@@ -107,7 +118,7 @@ describe('getAllHeroes', () => {
       request: { headers },
       get: (k: string) => headers[k.toLowerCase()],
       body: undefined,
-    } as Parameters<typeof getAllHeroes>[0];
+    } as Router.RouterContext;
     await getAllHeroes(ctx, next);
     expect(next).not.toBeCalled();
     expect(ctx.body).toEqual({
@@ -125,7 +136,7 @@ describe('getAllHeroes', () => {
       request: { headers },
       get: (k: string) => headers[k.toLowerCase()],
       body: undefined,
-    } as Parameters<typeof getAllHeroes>[0];
+    } as Router.RouterContext;
     const next = jest.fn();
     await expect(() => getAllHeroes(ctx, next)).rejects.toThrowError(
       Unauthorized,
@@ -174,10 +185,58 @@ describe('getAllHeroes', () => {
   );
 });
 
-// describe('getOneHero', () => {
-//   test('success without credential', () => {});
+describe('getOneHero', () => {
+  test('success without credential', async () => {
+    const hero = { id: '1', name: 'foo', image: 'bar' };
+    (fetchHero as jest.Mock).mockImplementationOnce(async () => hero);
+    const headers: Record<string, string> = {};
+    const next = jest.fn();
+    const ctx = {
+      request: { headers },
+      get: (k: string) => headers[k.toLowerCase()],
+      body: undefined,
+      params: { id: hero.id },
+    } as unknown as Router.RouterContext;
+    await getOneHero(ctx, next);
+    expect(ctx.body).toEqual(hero);
+  });
 
-//   test('success with credential');
+  test('success with credential', async () => {
+    const hero = { id: '1', name: 'foo', image: 'bar' };
+    (fetchHero as jest.Mock).mockImplementationOnce(async () => hero);
+    (authenticate as jest.Mock).mockImplementationOnce(async () => true);
+    (fetchHeroProfile as jest.Mock).mockImplementation(async (hid) => ({
+      foo: 'bar' + hid,
+    }));
+    const headers: Record<string, string> = { name: 'foo', password: 'bar' };
+    const next = jest.fn();
+    const ctx = {
+      request: { headers },
+      get: (k: string) => headers[k.toLowerCase()],
+      body: undefined,
+      params: { id: hero.id },
+    } as unknown as Router.RouterContext;
+    await getOneHero(ctx, next);
+    expect(ctx.body).toEqual({
+      id: '1',
+      name: 'foo',
+      image: 'bar',
+      profile: { foo: 'bar1' },
+    });
+  });
 
-//   test('failure with invalid credential');
-// });
+  test('failure with invalid credential', async () => {
+    (authenticate as jest.Mock).mockImplementationOnce(async () => false);
+    const headers: Record<string, string> = { name: 'foo', password: 'bar' };
+    const ctx = {
+      request: { headers },
+      get: (k: string) => headers[k.toLowerCase()],
+      body: undefined,
+      params: { id: '1' },
+    } as unknown as Router.RouterContext;
+    const next = jest.fn();
+    await expect(() => getOneHero(ctx, next)).rejects.toThrowError(
+      Unauthorized,
+    );
+  });
+});
