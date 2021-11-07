@@ -19,6 +19,15 @@ export function negotiator(
     const acceptType = ctx.accepts(availableTypes);
     ctx.assert(acceptType !== false, 406);
     await next();
+
+    // set to ctx.body may also change ctx.status,
+    // however we don't want the status to be changed here.
+    // eslint-disable-next-line max-len
+    // @see https://github.com/koajs/koa/blob/65f9c939e173ff2fab82ee9229a2213690959426/lib/response.js#L134-L190
+    const status = ctx.status;
+
+    // acceptType must be in map since we provide keys of map to ctx.accepts()
     ctx.body = map[acceptType](ctx.body);
+    ctx.status = status;
   };
 }
