@@ -1,4 +1,4 @@
-import { BadGateway } from 'http-errors';
+import { BadGateway, NotFound } from 'http-errors';
 import fetch, { MockParams } from 'jest-fetch-mock';
 import Joi, { ValidationError } from 'joi';
 import { AbortSignal } from 'node-fetch/externals';
@@ -66,6 +66,12 @@ describe('fetchJson', () => {
     });
     const json = await fetchJson('<url>', schema);
     expect(json).toEqual(data);
+  });
+
+  test('forward 4xx status', async () => {
+    fetch.mockResponseOnce('', { status: 404 });
+    const err = await getThrownError(() => fetchJson('<url>', Joi.any()));
+    expect(err).toBeInstanceOf(NotFound);
   });
 
   test('throw on non-200 status', async () => {
