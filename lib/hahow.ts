@@ -1,7 +1,8 @@
-import { BadGateway, HttpError } from 'http-errors';
+import createHttpError, { BadGateway, HttpError } from 'http-errors';
 import Joi from 'joi';
-import fetch, { RequestInit } from 'node-fetch';
+import { RequestInit } from 'node-fetch';
 import { TranslatableError } from './errors';
+import fetch from './request';
 
 export class ApiGatewayError extends Error implements TranslatableError {
   public name = 'ApiGatewayError';
@@ -34,6 +35,11 @@ export async function fetchJson<T = unknown>(
     headers: { Accept: 'application/json' },
     ...options,
   });
+
+  // forward client errors
+  if (resp.status >= 400 && resp.status < 500) {
+    throw createHttpError(resp.status);
+  }
 
   if (resp.status !== 200) {
     throw new ApiGatewayError(
