@@ -34,8 +34,9 @@ export async function loadProfile(
 }
 
 export const getAllHeroes: Router.Middleware = async (ctx) => {
+  const auth = await hahowAuth(ctx);
   let heroes = await fetchHeroes();
-  if (await hahowAuth(ctx)) {
+  if (auth) {
     // @TODO use async.parallelLimit
     // if a limit of maximum concurrencies is required
     const ctrl = new AbortController();
@@ -55,10 +56,9 @@ export const getAllHeroes: Router.Middleware = async (ctx) => {
 };
 
 export const getOneHero: Router.Middleware = async (ctx) => {
+  const auth = await hahowAuth(ctx);
   let hero = await fetchHero(ctx.params.id);
-  if (await hahowAuth(ctx)) {
-    hero = await loadProfile(hero);
-  }
+  if (auth) hero = await loadProfile(hero);
   ctx.body = hero;
 };
 
