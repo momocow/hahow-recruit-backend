@@ -5,5 +5,6 @@ module.exports = {
   automock: false,
   setupFiles: [
     './jest.setup.js'
-  ]
+  ],
+  timers: 'fake'
 };

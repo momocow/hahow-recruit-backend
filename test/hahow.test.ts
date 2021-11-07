@@ -37,8 +37,6 @@ describe('authenticate', () => {
   });
 
   test('can be aborted', async () => {
-    jest.useFakeTimers();
-
     fetch.mockResponseOnce(async () => {
       jest.advanceTimersByTime(100);
       return { body: '', init: { status: 200 } };
@@ -51,8 +49,6 @@ describe('authenticate', () => {
       authenticate('foo', 'bar', { signal: ctrl.signal as AbortSignal }),
     );
     expect((err as Error).name).toBe('AbortError');
-
-    jest.useRealTimers();
   });
 });
 
@@ -126,8 +122,6 @@ describe('fetchJson', () => {
   });
 
   test('can be aborted', async () => {
-    jest.useFakeTimers();
-
     fetch.mockResponseOnce(async () => {
       jest.advanceTimersByTime(100);
       return '';
@@ -140,8 +134,6 @@ describe('fetchJson', () => {
       fetchJson('<url>', Joi.any(), { signal: ctrl.signal as AbortSignal }),
     );
     expect((err as Error).name).toBe('AbortError');
-
-    jest.useRealTimers();
   });
 });
 
