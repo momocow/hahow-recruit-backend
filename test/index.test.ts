@@ -3,6 +3,12 @@ import omit from 'lodash/omit';
 import request from 'supertest';
 import { createApp } from '../lib/index';
 
+function createAppCallback() {
+  const app = createApp(undefined, { silent: true });
+  app.silent = true;
+  return app.callback();
+}
+
 describe('success', () => {
   const heroes = [
     {
@@ -52,7 +58,7 @@ describe('success', () => {
   });
 
   test('GET /heroes without auth', async () => {
-    await request(createApp().callback())
+    await request(createAppCallback())
       .get('/heroes')
       .set('Accept', 'application/json')
       .expect(200)
@@ -61,7 +67,7 @@ describe('success', () => {
   });
 
   test('GET /heroes with auth', async () => {
-    await request(createApp().callback())
+    await request(createAppCallback())
       .get('/heroes')
       .set('Accept', 'application/json')
       .set('Name', 'foo')
@@ -72,7 +78,7 @@ describe('success', () => {
   });
 
   test('GET /heroes/1 without auth', async () => {
-    await request(createApp().callback())
+    await request(createAppCallback())
       .get('/heroes/1')
       .set('Accept', 'application/json')
       .expect(200)
@@ -87,7 +93,7 @@ describe('success', () => {
   });
 
   test('GET /heroes/1 with auth', async () => {
-    await request(createApp().callback())
+    await request(createAppCallback())
       .get('/heroes/1')
       .set('Accept', 'application/json')
       .set('Name', 'foo')
@@ -107,26 +113,26 @@ describe('success', () => {
 
 describe('error handling', () => {
   test('negotiation failed', async () => {
-    await request(createApp().callback())
+    await request(createAppCallback())
       .get('/heroes')
       .set('Accept', 'text/xml')
       .expect(406);
   });
 
   test('unsupported method', async () => {
-    await request(createApp().callback())
+    await request(createAppCallback())
       .delete('/heroes')
       .set('Accept', 'application/json')
       .expect(405);
   });
 
   test('not found', async () => {
-    await request(createApp().callback()).get('/').expect(404);
+    await request(createAppCallback()).get('/').expect(404);
   });
 
   test('Hahow API error: non-200 status', async () => {
     fetch.mockResponseOnce('', { status: 500 });
-    await request(createApp().callback())
+    await request(createAppCallback())
       .get('/heroes')
       .set('Accept', 'application/json')
       .expect(502);
@@ -137,7 +143,7 @@ describe('error handling', () => {
       status: 200,
       headers: { 'Content-Type': 'text/xml' },
     });
-    await request(createApp().callback())
+    await request(createAppCallback())
       .get('/heroes')
       .set('Accept', 'application/json')
       .expect(502);
@@ -148,7 +154,7 @@ describe('error handling', () => {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
-    await request(createApp().callback())
+    await request(createAppCallback())
       .get('/heroes')
       .set('Accept', 'application/json')
       .expect(502);
@@ -159,7 +165,7 @@ describe('error handling', () => {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
-    await request(createApp().callback())
+    await request(createAppCallback())
       .get('/heroes')
       .set('Accept', 'application/json')
       .expect(502);

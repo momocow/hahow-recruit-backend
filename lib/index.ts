@@ -3,10 +3,17 @@ import { errorLogger, errorTranslator } from './errors';
 import { negotiator } from './negotiator';
 import hero from './routes/heroes';
 
-export function createApp(app: Koa = new Koa()): Koa {
+export interface AppOptions {
+  silent: boolean;
+}
+
+export function createApp(
+  app: Koa = new Koa(),
+  { silent = false }: Partial<AppOptions> = {},
+): Koa {
   return app
     .use(errorTranslator())
-    .use(errorLogger())
+    .use(errorLogger({ silent }))
     .use(negotiator())
     .use(hero());
 }

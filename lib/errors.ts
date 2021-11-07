@@ -51,16 +51,18 @@ export function errorTranslator({
 
 export interface ErrorLoggerOptions {
   shouldLog: (error: unknown) => boolean;
+  silent: boolean;
 }
 
 export function errorLogger({
   shouldLog = (err) => !isHttpError(err),
+  silent = false,
 }: Partial<ErrorLoggerOptions> = {}): Koa.Middleware {
   return async (_, next) => {
     try {
       return await next();
     } catch (err) {
-      if (shouldLog(err)) console.error(err);
+      if (!silent && shouldLog(err)) console.error(err);
       throw err;
     }
   };
