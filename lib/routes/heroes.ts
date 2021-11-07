@@ -37,15 +37,14 @@ export const getAllHeroes: Router.Middleware = async (ctx) => {
   const auth = await hahowAuth(ctx);
   let heroes = await fetchHeroes();
   if (auth) {
-    // @TODO use async.parallelLimit
-    // if a limit of maximum concurrencies is required
+    // to abort parallel loadProfile()'s once any of them failed.
     const ctrl = new AbortController();
     heroes = await Promise.all(
       heroes.map((hero) =>
         // @TODO AbortSignal in @types/node
         //       lacks definitions to be an EventTarget
         loadProfile(hero, { signal: ctrl.signal as AbortSignal }).catch((e) => {
-          ctrl.abort();
+          if (!ctrl.signal.aborted) ctrl.abort();
           throw e;
         }),
       ),
